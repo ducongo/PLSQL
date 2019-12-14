@@ -8,7 +8,10 @@ BEGIN
     --  DBMS_OUTPUT.PUT_LINE(CONCAT('VALUE OPBATAINED IS ',i));
     --  bank.close_branch('kkk');
 
-    bank.open_account('lyna', 'paris', 10);
+    -- bank.open_account('kodesh', 'paris', 10);
+    bank.transfer('0000000', '0000001', 5);
+    bank.withdraw('0000000', 5);
+
 END;
 
 -- BEGIN
