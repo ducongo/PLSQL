@@ -42,12 +42,9 @@ CREATE OR REPLACE PACKAGE BODY bank IS
         resultString CHAR(3);
         branch_already_exist EXCEPTION;
     BEGIN
-        -- DBMS_OUTPUT.PUT_LINE(CONCAT('RESULT FROM BRANCH()', get_branch(input_address)));
-        DBMS_OUTPUT.PUT_LINE('SERIOUSLY TF MANNNNN');
+
         resultString := get_branch(input_address);
-        DBMS_OUTPUT.PUT_LINE('YOOO SERIOUSLY TF');
         IF resultString IS NULL THEN
-            DBMS_OUTPUT.PUT_LINE('We are at this level 1');
 
             BEGIN
                 SELECT branch_number INTO resultString FROM branch WHERE branch.open = 0;
@@ -67,25 +64,20 @@ CREATE OR REPLACE PACKAGE BODY bank IS
             ELSE
                 DBMS_OUTPUT.PUT_LINE('We are at this level 3333');
                 
-                -- BEGIN
-                --     SELECT branch_number INTO resultString FROM branch WHERE branch.open = 0;
-                -- EXCEPTION
-                --     WHEN NO_DATA_FOUND THEN
-                --         resultString:= NULL;
-                -- END;
-                SELECT MAX(branch_number) INTO resultString FROM branch WHERE branch.open = 1;
-                DBMS_OUTPUT.PUT_LINE('VALUE OF HIGHEST');
-                DBMS_OUTPUT.PUT_LINE('We are at this level 3333');
+                BEGIN
+                    SELECT MAX(branch_number) INTO resultString FROM branch WHERE branch.open = 1;
+                EXCEPTION
+                    WHEN NO_DATA_FOUND THEN
+                        resultString:= NULL;
+                END;
+
                 IF resultString IS NOT NULL THEN
                 
                     IF TO_NUMBER(resultString) < 10 THEN
-                        DBMS_OUTPUT.PUT_LINE('We are at this level 444');
                         resultString := CONCAT('00', TO_CHAR(TO_NUMBER(resultString) + 1));
                     ELSIF TO_NUMBER(resultString) < 100 THEN
-                        DBMS_OUTPUT.PUT_LINE('We are at this level 555');
                         resultString := CONCAT('0', TO_CHAR(TO_NUMBER(resultString) + 1));
                     ELSE
-                        DBMS_OUTPUT.PUT_LINE('We are at this level 666');
                         resultString := TO_CHAR(TO_NUMBER(resultString) + 1);
                     END iF;
                 ELSE
@@ -111,7 +103,6 @@ CREATE OR REPLACE PACKAGE BODY bank IS
         branch_nonexistant EXCEPTION;
     BEGIN
         bnum := get_branch(input_address);
-        DBMS_OUTPUT.PUT_LINE(CONCAT('BNUM IS ', bnum));
         UPDATE branch SET open = 0 where branch.address = input_address;
         IF SQL%ROWCOUNT = 0 THEN
             DBMS_OUTPUT.PUT_LINE('COULD NOT CLOSE BRANCH');
@@ -130,12 +121,10 @@ CREATE OR REPLACE PACKAGE BODY bank IS
     PROCEDURE create_customer (input_name VARCHAR2) IS
         cnum  CHAR(5);
     BEGIN
-        DBMS_OUTPUT.PUT_LINE('BOUT TO CREATE CUSTOMER');
         BEGIN
             SELECT customer_number INTO cnum FROM customer WHERE name = input_name;
         EXCEPTION
             WHEN NO_DATA_FOUND THEN
-                DBMS_OUTPUT.PUT_LINE('SHOULD BE HERE 111');
                 cnum:= NULL;
         END;
 
@@ -146,7 +135,6 @@ CREATE OR REPLACE PACKAGE BODY bank IS
                 SELECT customer_number INTO cnum FROM customer WHERE customer.open = 0;
             EXCEPTION
                 WHEN NO_DATA_FOUND THEN
-                    DBMS_OUTPUT.PUT_LINE('SHOULD BE HERE 222');
                     cnum:= NULL;
             END;
             
@@ -156,29 +144,19 @@ CREATE OR REPLACE PACKAGE BODY bank IS
                 cnum := NULL;
                 SELECT MAX(customer_number) INTO cnum FROM customer;
                 IF cnum IS NOT NULL THEN
-                    DBMS_OUTPUT.PUT_LINE(CONCAT('CNUM IS _______________________', cnum));
                     IF TO_NUMBER(cnum) < 10 THEN
-                        DBMS_OUTPUT.PUT_LINE('LOOKING AT level 1');
                         cnum := CONCAT('0000', TO_CHAR(TO_NUMBER(cnum) + 1));
                     ELSIF TO_NUMBER(cnum) < 100 THEN
-                        DBMS_OUTPUT.PUT_LINE('LOOKING AT level 2');
                         cnum := CONCAT('000', TO_CHAR(TO_NUMBER(cnum) + 1));
                     ELSIF TO_NUMBER(cnum) < 1000 THEN
-                        DBMS_OUTPUT.PUT_LINE('LOOKING AT level 3');
                         cnum := CONCAT('00', TO_CHAR(TO_NUMBER(cnum) + 1));
                     ELSIF TO_NUMBER(cnum) < 10000 THEN
-                        DBMS_OUTPUT.PUT_LINE('LOOKING AT level 4');
                         cnum := CONCAT('0', TO_CHAR(TO_NUMBER(cnum) + 1));
                     ELSE
-                        DBMS_OUTPUT.PUT_LINE('LOOKING AT level 5');
                         cnum := TO_CHAR(TO_NUMBER(cnum) + 1);
                     END IF;
-                    DBMS_OUTPUT.PUT_LINE('LOOKING AT level 6');
-                    DBMS_OUTPUT.PUT_LINE(CONCAT('CNUM IS _______________________', cnum));
                     INSERT INTO customer VALUES(cnum, input_name, 0, 1);
-                    DBMS_OUTPUT.PUT_LINE('Created customer');
                 ELSE
-                    DBMS_OUTPUT.PUT_LINE(CONCAT('CNUM IS OOOOOOOOOOOOOO_______________________', cnum));
                     INSERT INTO customer VALUES('00000', input_name, 0, 1);
                 END IF;
             END IF;
@@ -219,28 +197,24 @@ CREATE OR REPLACE PACKAGE BODY bank IS
             SELECT balance INTO account_balance FROM account WHERE account.account_number = input_account;
         EXCEPTION
             WHEN NO_DATA_FOUND THEN
-                DBMS_OUTPUT.PUT_LINE('SHOULD BE HERE 222');
                 account_balance:= NULL;
         END;
-        DBMS_OUTPUT.PUT_LINE('SHOULD BE HERE 333');
         IF account_balance IS NOT NULL THEN
             IF account_balance <= 0 THEN
                 UPDATE account SET open = 0 where account.account_number = input_account;
                 IF SQL%ROWCOUNT = 0 THEN
-                    DBMS_OUTPUT.PUT_LINE('COULD NOT CLOSE BRANCH');
                     RAISE account_nonexistant;
                 END IF;
             ELSE
                 RAISE balance_positive;
             END IF;
         ELSE
-            DBMS_OUTPUT.PUT_LINE('SHOULD BE HERE 444');
             RAISE account_nonexistant;
         END IF;
-    EXCEPTION
-        WHEN OTHERS THEN
-            DBMS_OUTPUT.PUT_LINE('ERROR OPENING CUSTOMER');
-            raise_application_error (-20100, 'error#' || sqlcode || ' desc: ' || sqlerrm);
+    -- EXCEPTION
+    --     WHEN OTHERS THEN
+    --         DBMS_OUTPUT.PUT_LINE('ERROR OPENING CUSTOMER');
+    --         raise_application_error (-20100, 'error#' || sqlcode || ' desc: ' || sqlerrm);
     END;
 
     
@@ -262,17 +236,15 @@ CREATE OR REPLACE PACKAGE BODY bank IS
                 SELECT branch_number INTO bnum FROM branch WHERE branch.address = input_address;
             EXCEPTION
                 WHEN NO_DATA_FOUND THEN
-                    DBMS_OUTPUT.PUT_LINE('SHOULD BE HERE 222');
                     bnum:= NULL;
             END;
 
             IF bnum IS NOT NULL THEN
                 
                 BEGIN
-                    SELECT customer_number INTO cnum FROM customer WHERE customer.name = input_customer;
+                    SELECT customer_number INTO cnum FROM customer WHERE customer.name = input_customer OR customer.customer_number = input_customer;
                 EXCEPTION
                     WHEN NO_DATA_FOUND THEN
-                        DBMS_OUTPUT.PUT_LINE('SHOULD BE HERE 333333');
                         cnum:= NULL;
                 END;
                 IF cnum IS NOT NULL THEN
@@ -283,7 +255,6 @@ CREATE OR REPLACE PACKAGE BODY bank IS
                         SELECT account_number INTO anum FROM account WHERE account.customer_number = cnum AND account.account_number LIKE CONCAT(bnum, '%');
                     EXCEPTION
                         WHEN NO_DATA_FOUND THEN
-                            DBMS_OUTPUT.PUT_LINE('SHOULD BE HERE uh hahahahah');
                             anum:= NULL;
                     END; 
 
@@ -293,28 +264,20 @@ CREATE OR REPLACE PACKAGE BODY bank IS
                         SELECT account_number INTO anum FROM account WHERE account.open = 0;
                         EXCEPTION
                             WHEN NO_DATA_FOUND THEN
-                                DBMS_OUTPUT.PUT_LINE('SHOULD BE HERE 444444');
                                 anum:= NULL;
                         END;
                         
                         IF anum IS NOT NULL THEN
-                            DBMS_OUTPUT.PUT_LINE('SHOULD BE HERE 5555');
                             UPDATE account SET customer_number = cnum, balance = input_amount, open = 1 WHERE account.account_number = anum;
                         ELSE
-                            DBMS_OUTPUT.PUT_LINE('SHOULD BE HERE 6666');
                             SELECT MAX(account_number) INTO anum FROM account WHERE account_number LIKE CONCAT(bnum, '%');
                             IF anum IS NOT NULL THEN
-                                DBMS_OUTPUT.PUT_LINE('SHOULD BE HERE 7777');
                                 highestLocal := SUBSTR(anum, 4, 4);
-                                DBMS_OUTPUT.PUT_LINE(CONCAT('highestlocal is ', CONCAT('000', TO_CHAR(TO_NUMBER(highestLocal) + 1))));
                                 IF TO_NUMBER(highestLocal) < 10 THEN
-                                    DBMS_OUTPUT.PUT_LINE('SHOULD BE HERE 8888');
                                     newLocal := CONCAT('000', TO_CHAR(TO_NUMBER(highestLocal) + 1));
                                 ELSIF TO_NUMBER(highestLocal) < 100 THEN
-                                    DBMS_OUTPUT.PUT_LINE('SHOULD BE HERE 9999');
                                     newLocal := CONCAT('00', TO_CHAR(TO_NUMBER(highestLocal) + 1));
                                 ELSIF TO_NUMBER(highestLocal) < 1000 THEN
-                                    DBMS_OUTPUT.PUT_LINE('SHOULD BE HERE 9100110');
                                     newLocal := CONCAT('0', TO_CHAR(TO_NUMBER(highestLocal) + 1));
                                 ELSE
                                     newLocal := TO_CHAR(TO_NUMBER(highestLocal) + 1);
@@ -359,10 +322,8 @@ CREATE OR REPLACE PACKAGE BODY bank IS
                 SELECT balance INTO account_balance FROM account WHERE account_number = input_account;
             EXCEPTION
                 WHEN NO_DATA_FOUND THEN
-                    DBMS_OUTPUT.PUT_LINE('SHOULD BE HERE 222');
                     account_balance:= NULL;
             END;
-            DBMS_OUTPUT.PUT_LINE('WE ARE HERE -----------------------------');
             
             IF account_balance IS NOT NULL THEN
                 IF account_balance >= input_amount THEN
@@ -411,7 +372,6 @@ CREATE OR REPLACE PACKAGE BODY bank IS
                 SELECT balance INTO account1_balance FROM account WHERE account_number = input_account1;
             EXCEPTION
                 WHEN NO_DATA_FOUND THEN
-                    DBMS_OUTPUT.PUT_LINE('SHOULD BE HERE 222');
                     account1_balance:= NULL;
             END;
 
