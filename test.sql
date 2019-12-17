@@ -8,9 +8,13 @@ BEGIN
     --  DBMS_OUTPUT.PUT_LINE(CONCAT('VALUE OPBATAINED IS ',i));
     --  bank.close_branch('kkk');
 
-    -- bank.open_account('kodesh', 'paris', 10);
-    bank.transfer('0000000', '0000001', 5);
-    bank.withdraw('0000000', 5);
+    bank.open_account('parfait', 'ottawa', 1000000);
+    -- bank.transfer('0000001', '0000000', 10);
+    -- bank.withdraw('0000000', 5);
+    -- UPDATE account SET balance = (balance - 5)  WHERE account.account_number = '0000001';
+    -- select * from table(bank.show_branch('ottawa'));
+    select * from table(bank.show_all_branches);
+    select * from table(bank.show_customer('lyna'));
 
 END;
 

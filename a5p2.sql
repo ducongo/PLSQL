@@ -11,6 +11,9 @@ CREATE OR REPLACE PACKAGE bank IS
   PROCEDURE withdraw (input_account VARCHAR2, input_amount NUMBER);
   PROCEDURE deposit (input_account VARCHAR2, input_amount NUMBER);
   PROCEDURE transfer (input_account1 VARCHAR2, input_account2 VARCHAR2, input_amount NUMBER);
+  function show_branch(input_address VARCHAR2) return account_record_table;
+  function show_all_branches return account_record_table;
+  function show_customer(input_name VARCHAR2) return customer_record_table;
   
 END bank;
 /
@@ -277,7 +280,7 @@ CREATE OR REPLACE PACKAGE BODY bank IS
                     anum := NULL;
                 
                     BEGIN
-                        SELECT account_number INTO anum FROM account WHERE account.customer_number = cnum;
+                        SELECT account_number INTO anum FROM account WHERE account.customer_number = cnum AND account.account_number LIKE CONCAT(bnum, '%');
                     EXCEPTION
                         WHEN NO_DATA_FOUND THEN
                             DBMS_OUTPUT.PUT_LINE('SHOULD BE HERE uh hahahahah');
@@ -436,6 +439,78 @@ CREATE OR REPLACE PACKAGE BODY bank IS
             RAISE insufficient_balance;
         END IF;
     END;
+
+    function show_branch(input_address VARCHAR2) return account_record_table as
+        v_ret   account_record_table;
+        branch_nonexistant EXCEPTION;
+        total_balance NUMBER;
+        bnum CHAR(3);
+    BEGIN
+        -- drop type     account_record_table;
+        -- drop type     account_record;
+        bnum := get_branch(input_address);
+        IF bnum IS NOT NULL THEN
+            SELECT SUM(balance) INTO total_balance FROM account WHERE account_number LIKE CONCAT(bnum, '%');
+
+            select account_record(account_number,balance, total_balance, bnum)
+            bulk collect into v_ret from account where account_number LIKE CONCAT(bnum, '%');
+
+            return v_ret;
+
+        ELSE
+            DBMS_OUTPUT.PUT_LINE('BRANCH DOESNT EXIST IN ORDER TO SHOW ACCOUNTS');
+            RAISE branch_nonexistant;
+        END IF;
+        
+    END;
+
+    function show_all_branches return account_record_table as
+            v_ret   account_record_table;
+            CURSOR branch_addresses IS SELECT address FROM branch;
+        BEGIN
+            v_ret  := account_record_table();
+            FOR branch_record IN branch_addresses
+                LOOP
+                    DBMS_OUTPUT.PUT_LINE(CONCAT('BRANCH NUMBER IS ', branch_record.address));
+
+                    FOR record in (select * from table(show_branch(branch_record.address)))
+                        LOOP
+                            v_ret.extend; 
+                            v_ret(v_ret.count) := account_record(record.account_number,record.account_balance, record.branch_total, record.branch_number);
+                            -- DBMS_OUTPUT.PUT_LINE(record.account_number||' '||record.account_balance||' '||record.branch_total||' '||record.branch_number);
+                        END LOOP;
+                    
+                    -- select account_record(account_number,account_balance, branch_total, branch_number)
+                    -- bulk collect into v_ret from table(show_branch(branch_record.address));
+        
+                END LOOP;
+
+            return v_ret;
+        END;
+
+    function show_customer(input_name VARCHAR2) return customer_record_table as
+        v_ret   customer_record_table;
+        branch_nonexistant EXCEPTION;
+        total_balance NUMBER;
+        cnum CHAR(5);
+        BEGIN
+
+            SELECT customer_number INTO cnum FROM customer WHERE customer.name = input_name OR customer.customer_number = input_name;
+            
+            IF cnum IS NOT NULL THEN
+                SELECT SUM(balance) INTO total_balance FROM account WHERE account.customer_number = cnum;
+
+                select customer_record(account_number,balance, total_balance, cnum)
+                bulk collect into v_ret from account where account.customer_number = cnum;
+
+                return v_ret;
+
+            ELSE
+                DBMS_OUTPUT.PUT_LINE('CUSTOMER DOESNT EXIST IN ORDER TO SHOW ACCOUNTS');
+                RAISE branch_nonexistant;
+            END IF;
+            
+        END;
 
 END bank;
 /
